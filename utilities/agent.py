@@ -7,8 +7,8 @@ class Agent:
         self.excessHours = 0
 
     def __str__(self):
-        print("self.totalTime: " , self.totalTime)
-        print("self.dndTime: " , self.dndTime)
+        print("self.totalTime: ", self.totalTime)
+        print("self.dndTime: ", self.dndTime)
         
     def getTotalTime(self):
         return self.totalTime - self.excessHours
