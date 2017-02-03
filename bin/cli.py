@@ -7,7 +7,8 @@
 # -*- coding: utf-8 -*-
 import traceback
 from re import search
-from pyexcel import Sheet, get_book, RowValueFilter
+import pyexcel as pe
+from pyexcel import Sheet, get_book
 from pyexcel.book import Book
 from os.path import dirname, abspath, join
 from collections import OrderedDict
@@ -42,7 +43,7 @@ def main():
     summary = OrderedDict()
     reports[reports['feature_trace']] = ('Feature Type', 'Do Not Disturb')
     try:
-        wb_filter = RowValueFilter(header_filter)
+        wb_filter = pe.filters.RowFilter(header_filter)
         for rpt_name, rpt in reports.items():
             if isinstance(rpt, Book):
                 rpt.remove_sheet('Summary')
