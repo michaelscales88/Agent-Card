@@ -42,64 +42,45 @@ def main():
     check_time_card = MethodType(read_time_card, reports['agent_time_card'])
     check_feature_card = MethodType(read_feature_card, reports['feature_trace'])
 
-    output = Sheet(colnames=['', '% Avail', 'Absences', 'Late'])
+    output = Sheet(colnames=['', '% BW', '% Avail', 'Absences', 'Late'])
+    summary = [0, 0, 0]
     try:
         for sheet_name, emp_data in in_schedule(schedule):
-            tc_data = check_time_card(sheet_name, emp_data)
-            dnd_time = check_feature_card(sheet_name)
-            output.row += [
-                '{row_name}'.format(
-                    row_name=emp_data.ext
-                ),
-                '{val:.1%}'.format(
-                    val=safe_div(dnd_time, tc_data['Duration'])
-                ),
-                VALID_DAYS_IN_MONTH - tc_data['Log Events'],
-                tc_data['Late']
-            ]
-        # for rpt_name, rpt in reports.items():
-        #     if isinstance(rpt, Book):
-        #         r_filter = (
-        #             {
-        #                 'filter_col': reports[rpt][0],
-        #                 'filter_val': reports[rpt][1]
-        #             } if isinstance(reports.get(rpt, None), tuple)
-        #             else None
-        #         )
-        #         for sheet in rpt:
-        #             for row_name in sheet.rownames:
-        #                 try:
-        #                     if r_filter:
-        #                         if sheet[row_name, r_filter['filter_col']] == r_filter['filter_val']:
-        #                             cell_value = sheet[row_name, 'Duration']
-        #                         else:
-        #                             raise ValueError()
-        #                     else:
-        #                         cell_value = sheet[row_name, 'Duration']
-        #                 except ValueError:
-        #                     pass
-        #                 else:
-        #                     try:
-        #                         summary[sheet.name][rpt_name] += get_sec(cell_value)
-        #                     except KeyError:
-        #                         summary[sheet.name] = {
-        #                             **summary.get(sheet.name, {}),
-        #                             rpt_name: get_sec(cell_value)
-        #                         }
-
-        # for agent, col_data in summary.items():
-        #     if 'feature_trace' in col_data.keys():
-        #         output.row += [
-        #             '{row_name}'.format(
-        #                 row_name=int(search(r"([0-9]+)", agent).group(0))
-        #             ),
-        #             '{val:.1%}'.format(
-        #                 val=safe_div(col_data['feature_trace'], col_data['agent_time_card'])
-        #             )
-        #         ]
+            try:
+                tc_data = check_time_card(sheet_name, emp_data)
+            except KeyError:
+                pass
+            else:
+                dnd_time = check_feature_card(sheet_name)
+                output.row += [
+                    '{row_name}'.format(
+                        row_name=emp_data.ext
+                    ),
+                    '{val:.1%}'.format(
+                        val=safe_div(dnd_time, tc_data['Duration'])
+                    ),
+                    '{val:.1%}'.format(
+                        val=(1 - safe_div(dnd_time, tc_data['Duration']))
+                    ),
+                    VALID_DAYS_IN_MONTH - tc_data['Log Events'],
+                    tc_data['Late']
+                ]
+                summary[0] += dnd_time
+                summary[1] += tc_data['Duration']
+                summary[2] += safe_div(dnd_time, tc_data['Duration'])
         else:
             output.name_rows_by_column(0)
             print(output)
+            print(
+                '{val:.1%}'.format(
+                    val=safe_div(summary[0], summary[1])
+                )
+            )
+            print(
+                '{val:.1%}'.format(
+                    val=safe_div(summary[2], 30)
+                )
+            )
             output.save_as(filename=join(dirname(dirname(abspath(__file__))), 'output', 'outfile.xlsx'))
     except Exception:
         print(traceback.format_exc())
